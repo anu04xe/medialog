@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>medialog — your personal media universe</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="noise"></div>
+  <div class="app">
+
+    <!-- HEADER -->
+    <header class="header">
+      <div class="header-left">
+        <div class="logo">media<span>log</span></div>
+        <div class="tagline">// your personal media universe</div>
+      </div>
+      <div class="header-right">
+        <div class="search-wrap">
+          <span class="search-icon">⌕</span>
+          <input type="text" id="global-search" placeholder="search everything..." />
+          <kbd id="search-clear" style="display:none" onclick="clearSearch()">✕</kbd>
+        </div>
+        <button class="btn-primary" onclick="openAdd()">+ log something</button>
+      </div>
+    </header>
+
+    <!-- NAV TABS -->
+    <nav class="tabs" id="type-tabs">
+      <button class="tab active" data-type="all">all</button>
+      <button class="tab" data-type="game">🎮 games</button>
+      <button class="tab" data-type="anime">✨ anime</button>
+      <button class="tab" data-type="show">📺 tv</button>
+      <button class="tab" data-type="film">🎬 film</button>
+      <button class="tab" data-type="book">📖 books</button>
+      <button class="tab" data-type="manga">🖤 manga</button>
+      <button class="tab" data-type="album">💿 albums</button>
+    </nav>
+
+    <!-- VIEW SWITCHER -->
+    <div class="view-switcher">
+      <button class="view-btn active" data-view="dashboard" onclick="switchView('dashboard',this)">dashboard</button>
+      <button class="view-btn" data-view="timeline" onclick="switchView('timeline',this)">timeline</button>
+      <button class="view-btn" data-view="log" onclick="switchView('log',this)">full log</button>
+    </div>
+
+    <!-- SEARCH RESULTS BANNER -->
+    <div id="search-banner" class="search-banner" style="display:none"></div>
+
+    <!-- DASHBOARD VIEW -->
+    <div id="view-dashboard">
+      <div class="now-section">
+        <div class="section-label">now active</div>
+        <div class="now-grid" id="now-grid"></div>
+      </div>
+      <div class="stats-bar" id="stats-bar"></div>
+      <div class="section-label" style="margin-bottom:12px">recently finished</div>
+      <div id="recent-list" class="recent-grid"></div>
+    </div>
+
+    <!-- TIMELINE VIEW -->
+    <div id="view-timeline" style="display:none">
+      <div class="section-label" style="margin-bottom:16px">media timeline</div>
+      <div class="timeline-legend" id="timeline-legend"></div>
+      <div class="timeline-wrap" id="timeline-wrap"></div>
+    </div>
+
+    <!-- LOG VIEW -->
+    <div id="view-log" style="display:none">
+      <div class="log-controls">
+        <div class="log-filters" id="status-filters">
+          <button class="filter-btn on" data-status="all">all</button>
+          <button class="filter-btn" data-status="active">active</button>
+          <button class="filter-btn" data-status="done">done</button>
+          <button class="filter-btn" data-status="planned">planned</button>
+          <button class="filter-btn" data-status="dropped">dropped</button>
+        </div>
+        <div class="log-sort">
+          <select id="sort-select">
+            <option value="start-desc">newest started</option>
+            <option value="start-asc">oldest started</option>
+            <option value="end-desc">recently finished</option>
+            <option value="alpha">A → Z</option>
+            <option value="rating">top rated</option>
+          </select>
+        </div>
+        <div class="tag-filter-row" id="tag-filter-row"></div>
+      </div>
+      <div class="log-section">
+        <div id="log-list"></div>
+      </div>
+      <div class="import-row">
+        <span class="muted-text">import from:</span>
+        <label class="import-btn" for="csv-import">📋 CSV / Letterboxd / MAL</label>
+        <input type="file" id="csv-import" accept=".csv" style="display:none" onchange="handleCSVImport(event)" />
+        <button class="import-btn" onclick="downloadCSV()">⬇ export CSV</button>
+      </div>
+    </div>
+
+  </div><!-- /app -->
+
+  <!-- ADD / EDIT MODAL -->
+  <div class="modal-backdrop" id="add-modal" onclick="handleBackdropClick(event,'add-modal')">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="modal-title">log something new</h2>
+        <button class="modal-close" onclick="closeAdd()">✕</button>
+      </div>
+      <div class="form-grid-2">
+        <div class="form-row">
+          <label>title</label>
+          <input type="text" id="f-title" placeholder="e.g. Disco Elysium" />
+        </div>
+        <div class="form-row">
+          <label>type</label>
+          <select id="f-type">
+            <option value="game">🎮 Game</option>
+            <option value="anime">✨ Anime</option>
+            <option value="show">📺 TV Show</option>
+            <option value="film">🎬 Film</option>
+            <option value="book">📖 Book</option>
+            <option value="manga">🖤 Manga</option>
+            <option value="album">💿 Album</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-grid-2">
+        <div class="form-row">
+          <label>status</label>
+          <select id="f-status">
+            <option value="active">▶ Currently active</option>
+            <option value="done">■ Completed</option>
+            <option value="planned">◎ Plan to start</option>
+            <option value="dropped">✕ Dropped</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label>creator / studio / author</label>
+          <input type="text" id="f-creator" placeholder="e.g. ZA/UM" />
+        </div>
+      </div>
+      <div class="form-grid-2">
+        <div class="form-row">
+          <label>started</label>
+          <input type="date" id="f-start" />
+        </div>
+        <div class="form-row">
+          <label>finished (if done)</label>
+          <input type="date" id="f-end" />
+        </div>
+      </div>
+      <div class="form-grid-2">
+        <div class="form-row">
+          <label>progress label (free text)</label>
+          <input type="text" id="f-progress" placeholder="e.g. ep 6 / 12 or ch. 3 / 4" />
+        </div>
+        <div class="form-row">
+          <label>progress % <span class="muted-text" id="pct-display">0%</span></label>
+          <input type="range" id="f-pct" min="0" max="100" value="0" oninput="document.getElementById('pct-display').textContent=this.value+'%'" />
+        </div>
+      </div>
+      <div class="form-row">
+        <label>tags / moods <span class="muted-text">comma separated</span></label>
+        <input type="text" id="f-tags" placeholder="e.g. cozy, devastating, reread-worthy, OST, 10/10 writing" />
+        <div class="tag-suggestions" id="tag-suggestions"></div>
+      </div>
+      <div class="form-row">
+        <label>rating</label>
+        <div class="star-row" id="star-input">
+          <span class="star" data-v="1">★</span><span class="star" data-v="2">★</span>
+          <span class="star" data-v="3">★</span><span class="star" data-v="4">★</span><span class="star" data-v="5">★</span>
+        </div>
+      </div>
+      <div class="form-row">
+        <label>review / notes</label>
+        <textarea id="f-review" placeholder="thoughts, feelings, favourite moments..."></textarea>
+      </div>
+      <div class="form-row">
+        <label>cover color <span class="muted-text">pick a vibe</span></label>
+        <div class="color-picker-row" id="color-picker"></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-danger-ghost" id="delete-btn" onclick="confirmDelete()" style="display:none">delete entry</button>
+        <div style="flex:1"></div>
+        <button class="btn-ghost" onclick="closeAdd()">cancel</button>
+        <button class="btn-primary" onclick="saveEntry()">save entry</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DETAIL / REVIEW MODAL -->
+  <div class="modal-backdrop" id="review-modal" onclick="handleBackdropClick(event,'review-modal')">
+    <div class="modal modal-wide">
+      <div class="modal-header">
+        <h2 id="rv-title">—</h2>
+        <button class="modal-close" onclick="closeReview()">✕</button>
+      </div>
+      <div id="review-body"></div>
+      <div class="modal-actions" style="margin-top:20px">
+        <button class="btn-ghost" onclick="editFromReview()">✎ edit</button>
+        <div style="flex:1"></div>
+        <button class="btn-ghost" onclick="closeReview()">close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- IMPORT PREVIEW MODAL -->
+  <div class="modal-backdrop" id="import-modal" onclick="handleBackdropClick(event,'import-modal')">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>import preview</h2>
+        <button class="modal-close" onclick="closeImport()">✕</button>
+      </div>
+      <div id="import-preview"></div>
+      <div class="modal-actions" style="margin-top:16px">
+        <button class="btn-ghost" onclick="closeImport()">cancel</button>
+        <button class="btn-primary" onclick="confirmImport()">import all</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/render.js"></script>
+  <script src="js/timeline.js"></script>
+  <script src="js/import.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
